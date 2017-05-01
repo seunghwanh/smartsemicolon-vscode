@@ -1,0 +1,135 @@
+{
+    "name": "smartsemicolon",
+    "displayName": "Smart Semicolon",
+    "description": "Smart Semicolon Placement",
+    "version": "1.0.0",
+    "publisher": "seunghwanh",
+    "engines": {
+        "vscode": "^1.11.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./out/src/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "smartsemicolon.insert",
+                "title": "Smart Semicolon: Insert"
+            },
+            {
+                "command": "smartsemicolon.toggle",
+                "title": "Smart Semicolon: Toggle"
+            },
+            {
+                "command": "smartsemicolon.toggleAutoLineChange",
+                "title": "Smart Semicolon: Toggle Automatic Line Change"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "smartsemicolon.insert",
+                "key": ";"
+            },
+            {
+                "command": "smartsemicolon.toggle",
+                "key": "shift+ctrl+alt+o"
+            },
+            {
+                "command": "smartsemicolon.toggleAutoLineChange",
+                "key": "shift+ctrl+alt+l"
+            }
+        ],
+        "configuration": {
+            "properties": {
+                "smartsemicolon.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Set this true to enable the extension."
+                },
+                "smartsemicolon.autoLineChange": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Set this true to automatically insert a new line below and set the cursor at the beginning on a semicolon key."
+                },
+                "smartsemicolon.languages": {
+                    "type": "array",
+                    "description": "Set of languages where this extension will take actions",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "languageId": {
+                                "type": "string",
+                                "description": "Language ID used in the Visual Studio Code"
+                            },
+                            "lineComment": {
+                                "type": "string",
+                                "description": "Delimiter for line comments"
+                            },
+                            "brackets": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "description": "Delimiters for a block of codes"
+                            },
+                            "exceptionKeywords": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "This extension will insert a semicolon at the current cursor position if any of these are present in the current line"
+                            },
+                            "autoLineChangeExceptionKeywords": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "This extension will not perform an automatic line change if any of these are present in the current line"
+                            }
+                        }
+                    },
+                    "required": [
+                        "languageId"
+                    ],
+                    "default": [
+                        {
+                            "languageId": "csharp",
+                            "lineComment": "//",
+                            "brackets": [
+                                "{",
+                                "}"
+                            ],
+                            "exceptionKeywords": [
+                                "for"
+                            ],
+                            "autoLineChangeExceptionKeywords": [
+                                "return",
+                                "throw",
+                                "break"
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "tsc -p ./",
+        "compile": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "node ./node_modules/vscode/bin/test"
+    },
+    "devDependencies": {
+        "typescript": "^2.0.3",
+        "vscode": "^1.0.0",
+        "mocha": "^2.3.3",
+        "@types/node": "^6.0.40",
+        "@types/mocha": "^2.2.32"
+    }
+}
