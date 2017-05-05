@@ -51,7 +51,7 @@ In case you don't want the newly-inserted line, simply putting another semicolon
 
 Initial release 
 
-### 1.0.2
+### 1.0.3
 
 - Supports C#, C/C++, Java, Javascript/Typescript, Go, ShaderLab languages by default.
 - `smartsemicolon.languages` settings removed.
