@@ -2,7 +2,7 @@
 
 This extension places semicolons at the end of an expression.
 
-![Basic Feature](images/basic_feature.gif)
+![Basic Feature](https://raw.githubusercontent.com/seunghwanh/vscode-smartsemicolon/master/images/basic_feature.gif)
 
 ## Semantic Detection
 
@@ -10,15 +10,15 @@ This extension detects line comments and language brackets and configures the en
 
 Line Detection
 
-![Line Comment Detection](images/line_comment_detection.gif)
+![Line Comment Detection](https://raw.githubusercontent.com/seunghwanh/vscode-smartsemicolon/master/images/line_comment_detection.gif)
 
 Bracket Detection
 
-![Bracket Detection](images/bracket_detection.gif)
+![Bracket Detection](https://raw.githubusercontent.com/seunghwanh/vscode-smartsemicolon/master/images/bracket_detection.gif)
 
 ## Automatic Line Change
 
-![Auto Line Change Basic](images/auto_line_change_basic.gif)
+![Auto Line Change Basic](https://raw.githubusercontent.com/seunghwanh/vscode-smartsemicolon/master/images/auto_line_change_basic.gif)
 
 When enabled, this extension automatically inserts a new line below the current cursor and put the cursor at the beginning of the new line on a semicolon key. The exceptions are when:
 

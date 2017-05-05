@@ -10,9 +10,24 @@
     "categories": [
         "Other"
     ],
+    "keywords": [
+        "semicolon",
+        "colon",
+        "colonize"
+    ],
     "activationEvents": [
         "*"
     ],
+    "icon": "images/icon.png",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "homepage": "https://github.com/seunghwanh/vscode-smartsemicolon",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/seunghwanh/vscode-smartsemicolon.git"
+    },
+    "bugs": {
+        "url": "https://github.com/seunghwanh/vscode-smartsemicolon/issues"
+    },
     "main": "./out/src/extension",
     "contributes": {
         "commands": [
