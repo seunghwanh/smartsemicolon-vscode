@@ -2,17 +2,32 @@
     "name": "smartsemicolon",
     "displayName": "Smart Semicolon",
     "description": "Smart Semicolon Placement",
-    "version": "1.0.0",
-    "publisher": "seunghwanh",
+    "version": "1.0.2",
+    "publisher": "seunghwan",
     "engines": {
         "vscode": "^1.11.0"
     },
     "categories": [
         "Other"
     ],
+    "keywords": [
+        "semicolon",
+        "colon",
+        "colonize"
+    ],
     "activationEvents": [
         "*"
     ],
+    "icon": "images/icon.png",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "homepage": "https://github.com/seunghwanh/vscode-smartsemicolon",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/seunghwanh/vscode-smartsemicolon.git"
+    },
+    "bugs": {
+        "url": "https://github.com/seunghwanh/vscode-smartsemicolon/issues"
+    },
     "main": "./out/src/extension",
     "contributes": {
         "commands": [
@@ -54,67 +69,6 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Set this true to automatically insert a new line below and set the cursor at the beginning on a semicolon key."
-                },
-                "smartsemicolon.languages": {
-                    "type": "array",
-                    "description": "Set of languages where this extension will take actions",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "languageId": {
-                                "type": "string",
-                                "description": "Language ID used in the Visual Studio Code"
-                            },
-                            "lineComment": {
-                                "type": "string",
-                                "description": "Delimiter for line comments"
-                            },
-                            "brackets": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                },
-                                "minItems": 2,
-                                "maxItems": 2,
-                                "description": "Delimiters for a block of codes"
-                            },
-                            "exceptionKeywords": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                },
-                                "description": "This extension will insert a semicolon at the current cursor position if any of these are present in the current line"
-                            },
-                            "autoLineChangeExceptionKeywords": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                },
-                                "description": "This extension will not perform an automatic line change if any of these are present in the current line"
-                            }
-                        }
-                    },
-                    "required": [
-                        "languageId"
-                    ],
-                    "default": [
-                        {
-                            "languageId": "csharp",
-                            "lineComment": "//",
-                            "brackets": [
-                                "{",
-                                "}"
-                            ],
-                            "exceptionKeywords": [
-                                "for"
-                            ],
-                            "autoLineChangeExceptionKeywords": [
-                                "return",
-                                "throw",
-                                "break"
-                            ]
-                        }
-                    ]
                 }
             }
         }
