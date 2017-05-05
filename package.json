@@ -3,7 +3,7 @@
     "displayName": "Smart Semicolon",
     "description": "Smart Semicolon Placement",
     "version": "1.0.2",
-    "publisher": "seunghwanh",
+    "publisher": "seunghwan",
     "engines": {
         "vscode": "^1.11.0"
     },
