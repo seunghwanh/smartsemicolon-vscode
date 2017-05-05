@@ -29,11 +29,18 @@ When enabled, this extension automatically inserts a new line below the current 
 
 In case you don't want the newly-inserted line, simply putting another semicolon will cancel the insertion, and the cursor goes back to the previous position.
 
+## Supported Languages
+- C#
+- C/C++
+- Java
+- Javascript, Typescript
+- Go
+- ShaderLab
+
 ## Extension Settings
 
 * `smartsemicolon.enable`: enable this extension on/off.
 * `smartsemicolon.autoLineChange`: enable the automatic line changing feature on/off.
-* `smartsemicolon.languages`: set of languages where this extension will take actions.
 
 ## Known Issues
 
@@ -43,3 +50,9 @@ In case you don't want the newly-inserted line, simply putting another semicolon
 ### 1.0.0
 
 Initial release 
+
+### 1.0.2
+
+- Supports C#, C/C++, Java, Javascript/Typescript, Go, ShaderLab languages by default.
+- `smartsemicolon.languages` settings removed.
+- No duplicate semicolons
