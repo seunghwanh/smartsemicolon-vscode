@@ -25,49 +25,29 @@ export class LineParser {
             hasCloseBracketAfter: false
         };
 
-        this.inspectLineComment(line, lineInfo, position.character);
-        this.containsExceptionKeywords(line, lineInfo, position.character);
+        lineInfo.skip = this.isComment(line, position.character) || this.containsKeywords(line, this.exceptionKeywords);
         if (lineInfo.skip) {
             return position;
         }
 
         this.inspectBrackets(line, lineInfo, position.character);
         lineInfo.end = this.findNonWhitespace(line, lineInfo.end) + 1;
-
-        if (line.text.charAt(lineInfo.end) == ';') {
-            return undefined;
-        }
-
         return new Position(position.line, lineInfo.end);
     }
 
-    private inspectLineComment(line: TextLine, lineInfo: LineInfo, character: number): void {
-        if (!this.lineComment) {
-            return;
+    private containsKeywords(line: TextLine, keywords: string[]): boolean {
+        if (!keywords) {
+            return false;
         }
 
-        const index = line.text.indexOf(this.lineComment);
-        if (index >= 0) {
-            if (character > index) {
-                lineInfo.skip = true;
-            } else {
-                lineInfo.end = index;
-            }
-        }
-    }
-
-    private containsExceptionKeywords(line: TextLine, lineInfo: LineInfo, character: number): void {
-        if (lineInfo.skip || !this.exceptionKeywords) {
-            return;
-        }
-
-        for (let keyword of this.exceptionKeywords) {
+        for (let keyword of keywords) {
             const regex = new RegExp('\\s+' + keyword + '(\\s+|$)');
             if (line.text.match(regex)) {
-                lineInfo.skip = true;
-                break;
+                return true;
             }
         }
+
+        return false;
     }
 
     private inspectBrackets(line: TextLine, lineInfo: LineInfo, character: number): void {
@@ -89,7 +69,6 @@ export class LineParser {
             lineInfo.end = positions[1];
             lineInfo.hasCloseBracketAfter = true;
         }
-
         lineInfo.end--;
     }
 
@@ -115,6 +94,59 @@ export class LineParser {
         }
 
         return position;
+    }
+
+    public canInsertLineBelow(document: TextDocument, line: TextLine): boolean {
+        if (this.containsKeywords(line, this.autoLineChangeExceptionKeywords)) {
+            return false;
+        }
+
+        if (this.brackets) {
+            let needCheckAboveLine = line.lineNumber > 0;
+            let needCheckBelowLine = line.lineNumber < document.lineCount - 1;
+            let isAboveLineOpen = false;
+            let isBelowLineClose = false;
+            let isBelowLineCode = false;
+
+            if (needCheckAboveLine) {
+                let aboveLine = document.lineAt(line.lineNumber - 1);
+                let openIndex = aboveLine.text.lastIndexOf(this.brackets[0]);
+                let closeIndex = aboveLine.text.lastIndexOf(this.brackets[1]);
+
+                if (openIndex >= 0 && (closeIndex < 0 || closeIndex < openIndex)) {
+                    isAboveLineOpen = true;
+                }
+            }
+
+            if (needCheckBelowLine) {
+                let belowLine = document.lineAt(line.lineNumber + 1);
+                let openIndex = belowLine.text.indexOf(this.brackets[0]);
+                let closeIndex = belowLine.text.indexOf(this.brackets[1]);
+
+                if (closeIndex >= 0 && (openIndex < 0 || closeIndex < openIndex)) {
+                    isBelowLineClose = true;
+                }
+
+                isBelowLineCode = !isBelowLineClose &&
+                    !belowLine.isEmptyOrWhitespace &&
+                    !this.isComment(belowLine);
+            }
+
+            return !((isAboveLineOpen && isBelowLineClose) || isBelowLineCode);
+        }
+
+        return false;
+    }
+
+    private isComment(line: TextLine, character?: number): boolean {
+        if (this.lineComment) {
+            if (character === undefined) {
+                return line.text.startsWith(this.lineComment, line.firstNonWhitespaceCharacterIndex);
+            } else if (character > 0) {
+                return line.text.lastIndexOf(this.lineComment, character - 1) >= 0;
+            }
+        }
+        return false;
     }
 }
 
