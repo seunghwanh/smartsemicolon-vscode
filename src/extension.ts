@@ -68,7 +68,7 @@ function doInsert(editor: TextEditor) {
                 if (position.character == 0 || line.text.charAt(position.character - 1) != ';') {
                     editBuilder.insert(position, ';');
                 }
-                position.translate(0, 1);
+                position = position.translate(0, 1);
                 selections.push(new Selection(position, position));
             }
         }).then(() => {
