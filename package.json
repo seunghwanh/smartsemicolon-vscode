@@ -1,9 +1,10 @@
 {
     "name": "smartsemicolon",
-    "displayName": "Smart Semicolon",
-    "description": "Smart Semicolon Placement",
-    "version": "1.0.3",
-    "publisher": "seunghwan",
+    "displayName": "Smart semicolon",
+    "description": "Smart semicolon placement",
+    "version": "1.0.4",
+    "publisher": "monolith",
+    "author": "Monolith",
     "engines": {
         "vscode": "^1.11.0"
     },
@@ -12,36 +13,64 @@
     ],
     "keywords": [
         "semicolon",
-        "colon",
+        "smart semicolon",
+        "smart",
         "colonize"
-    ],
-    "activationEvents": [
-        "*"
     ],
     "icon": "images/icon.png",
     "license": "SEE LICENSE IN LICENSE.md",
-    "homepage": "https://github.com/seunghwanh/vscode-smartsemicolon",
+    "homepage": "https://github.com/seunghwanh/smartsemicolon-vscode",
     "repository": {
         "type": "git",
-        "url": "https://github.com/seunghwanh/vscode-smartsemicolon.git"
+        "url": "https://github.com/seunghwanh/smartsemicolon-vscode.git"
     },
     "bugs": {
-        "url": "https://github.com/seunghwanh/vscode-smartsemicolon/issues"
+        "url": "https://github.com/seunghwanh/smartsemicolon-vscode/issues"
     },
+    "activationEvents": [
+        "*"
+    ],
     "main": "./out/src/extension",
     "contributes": {
+        "configuration": {
+            "properties": {
+                "smartsemicolon.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable the extension."
+                },
+                "smartsemicolon.autoLineChange": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically insert a new line below and set the cursor at the beginning on a semicolon key."
+                },
+                "smartsemicolon.acceptSuggestions": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Accept the current suggestion from the IntelliSense when a semicolon is inserted."
+                },
+                "smartsemicolon.showInStatusBar": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Display the extension information in the status bar."
+                }
+            }
+        },
         "commands": [
             {
                 "command": "smartsemicolon.insert",
-                "title": "Smart Semicolon: Insert"
+                "title": "Insert",
+                "category": "Smart Semicolon"
             },
             {
                 "command": "smartsemicolon.toggle",
-                "title": "Smart Semicolon: Toggle"
+                "title": "Toggle",
+                "category": "Smart Semicolon"
             },
             {
                 "command": "smartsemicolon.toggleAutoLineChange",
-                "title": "Smart Semicolon: Toggle Automatic Line Change"
+                "title": "Toggle Automatic Line Change",
+                "category": "Smart Semicolon"
             }
         ],
         "keybindings": [
@@ -57,21 +86,7 @@
                 "command": "smartsemicolon.toggleAutoLineChange",
                 "key": "shift+ctrl+alt+l"
             }
-        ],
-        "configuration": {
-            "properties": {
-                "smartsemicolon.enable": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Set this true to enable the extension."
-                },
-                "smartsemicolon.autoLineChange": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Set this true to automatically insert a new line below and set the cursor at the beginning on a semicolon key."
-                }
-            }
-        }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",
