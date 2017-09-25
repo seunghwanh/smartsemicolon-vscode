@@ -69,15 +69,15 @@ function doInsert(editor: TextEditor, parser: LanguageParser) {
 }
 
 function canInsertLineAfter(document: TextDocument, selection: Selection, parser: LanguageParser): boolean {
-    if (selection.active.line == document.lineCount - 1) {
-        return true;
+    if (parser) {
+        return parser.canInsertLineAfter(document, selection.active.line);
     }
 
-    const nextLine = document.lineAt(selection.active.line + 1);
-    if (!parser) {
-        return nextLine.isEmptyOrWhitespace;
+    const lineNumber = selection.active.line;
+    if (lineNumber == document.lineCount - 1) {
+        return true;
     }
-    return parser.isEmptyLine(nextLine);
+    return document.lineAt(lineNumber + 1).isEmptyOrWhitespace;
 }
 
 function deleteLine(editBuilder: TextEditorEdit, editor: TextEditor, line: TextLine, selection: Selection): Selection {

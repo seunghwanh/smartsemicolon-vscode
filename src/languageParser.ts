@@ -86,13 +86,23 @@ export class LanguageParser {
         }
     }
 
-    public isEmptyLine(line: TextLine): boolean {
-        if (!this.brackets) {
-            return line.isEmptyOrWhitespace;
+    public canInsertLineAfter(document: TextDocument, lineNumber: number): boolean {
+        const line = document.lineAt(lineNumber);
+        if (this.containsKeywords(line, this.autoLineChangeExceptionKeywords)) {
+            return false;
         }
 
-        return line.text.startsWith(this.brackets[0], line.firstNonWhitespaceCharacterIndex) ||
-            line.text.startsWith(this.brackets[1], line.firstNonWhitespaceCharacterIndex);
+        if (lineNumber == document.lineCount - 1) {
+            return true;
+        }
+
+        const nextLine = document.lineAt(lineNumber + 1);
+        if (!this.brackets) {
+            return nextLine.isEmptyOrWhitespace;
+        }
+
+        return nextLine.isEmptyOrWhitespace || (nextLine.text.startsWith(this.brackets[0], nextLine.firstNonWhitespaceCharacterIndex) ||
+            nextLine.text.startsWith(this.brackets[1], nextLine.firstNonWhitespaceCharacterIndex));
     }
 }
 
