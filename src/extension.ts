@@ -17,12 +17,17 @@ export function activate(context: ExtensionContext) {
 }
 
 function insert() {
-    if (!enable) {
+    const editor = window.activeTextEditor;
+    if (!editor) {
         return;
     }
 
-    const editor = window.activeTextEditor;
-    if (!editor) {
+    if (!enable) {
+        editor.edit((editBuilder) => {
+            for (let i = 0; i < editor.selections.length; i++) {
+                editBuilder.insert(editor.selections[i].active, ';');
+            }
+        });
         return;
     }
 

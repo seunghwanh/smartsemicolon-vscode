@@ -52,7 +52,7 @@ export class LanguageParser {
         }
 
         return keywords.find(x =>
-            line.text.match(new RegExp('\\s' + x + '\\s', 'g')) != null) !== undefined;
+            line.text.match(new RegExp('\\s' + x + '(?:\\s|$)', 'g')) != null) !== undefined;
     }
 
     private findNonWhitespaceCharacterBackward(line: TextLine, index: number): number {
