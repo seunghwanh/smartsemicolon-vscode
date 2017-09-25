@@ -39,8 +39,11 @@ In case you don't want the newly-inserted line, simply putting another semicolon
 
 ## Extension Settings
 
-* `smartsemicolon.enable`: enable this extension on/off.
-* `smartsemicolon.autoLineChange`: enable the automatic line changing feature on/off.
+* `smartsemicolon.enable`: toggle this extension on/off.
+* `smartsemicolon.autoLineChange`: toggle the automatic line changing feature on/off.
+* `smartsemicolon.acceptSuggestions`: If true, accept the current IntelliSense suggestion on a semicolon.
+* `smartsemicolon.showInStatusBar`: toggle the extension information on the status bar.
+* `smartsemicolon.deleteEmptyLine`: toggle deleting an empty line if the cursor is at the line and the user pressed a semicolon.
 
 ## Known Issues
 
@@ -56,3 +59,10 @@ Initial release
 - Supports C#, C/C++, Java, Javascript/Typescript, Go, ShaderLab languages by default.
 - `smartsemicolon.languages` settings removed.
 - No duplicate semicolons
+
+### 1.0.4
+
+- Supports multi-cursor editing.
+- `smartsemicolon.acceptSuggestions` settings added.
+- `smartsemicolon.showInStatusBar` settings added.
+- `smartsemicolon.deleteEmptyLine` settings added.

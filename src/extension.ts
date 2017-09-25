@@ -5,6 +5,7 @@ import { LanguageParser } from "./languageParser";
 
 export function activate(context: ExtensionContext) {
     statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right);
+    statusBarItem.command = 'smartsemicolon.toggleAutoLineChange';
     context.subscriptions.push(statusBarItem);
 
     updateConfiguration();
@@ -148,8 +149,16 @@ let deleteEmptyLine: boolean;
 
 let statusBarItem: StatusBarItem;
 
+const cLangFamilyParser = new LanguageParser('//', ['{', '}'], ['for'], ['throw', 'return', 'break']);
+
 let parsers = new Map<string, LanguageParser>();
-parsers.set('csharp', new LanguageParser('//', ['{', '}'], ['for'], ['throw', 'return', 'break']));
-parsers.set('typescript', new LanguageParser('//', ['{', '}'], ['for'], ['throw', 'return', 'break']));
+parsers.set('c', cLangFamilyParser);
+parsers.set('cpp', cLangFamilyParser);
+parsers.set('csharp', cLangFamilyParser);
+parsers.set('java', cLangFamilyParser);
+parsers.set('typescript', cLangFamilyParser);
+parsers.set('javascript', cLangFamilyParser);
+parsers.set('go', cLangFamilyParser);
+parsers.set('shaderlab', cLangFamilyParser);
 
 const statusBarItemTitle = 'Smart Semicolon';
