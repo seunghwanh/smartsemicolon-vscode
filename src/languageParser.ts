@@ -50,7 +50,15 @@ export class LanguageParser {
         if (!keywords) {
             return false;
         }
-        return keywords.find(x => line.text.indexOf(x) >= 0) !== undefined;
+
+        // return keywords.find((x) => {
+        //     const regex = new RegExp('\\s' + x + '\\s');
+        //     const match = line.text.match(regex);
+        //     return match !== undefined;
+        // }) !== undefined;
+
+        return keywords.find(x =>
+            line.text.match(new RegExp('\\s' + x + '\\s', 'g')) != null) !== undefined;
     }
 
     private findNonWhitespaceCharacterBackward(line: TextLine, index: number): number {
