@@ -17,6 +17,10 @@ export function activate(context: ExtensionContext) {
 }
 
 function insert() {
+    if (!enable) {
+        return;
+    }
+
     const editor = window.activeTextEditor;
     if (!editor) {
         return;
