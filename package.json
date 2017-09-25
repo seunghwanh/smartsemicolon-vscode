@@ -53,6 +53,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Display the extension information in the status bar."
+                },
+                "smartsemicolon.deleteEmptyLine": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Deletes the current cursor line on semicolon if the line is empty."
                 }
             }
         },

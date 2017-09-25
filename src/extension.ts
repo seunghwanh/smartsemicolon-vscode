@@ -1,15 +1,13 @@
 'use strict';
 
-import { ExtensionContext, Disposable, StatusBarItem, window, StatusBarAlignment, workspace, TextEditor, commands, Position, Selection, TextLine, TextDocument, Range, TextEditorEdit } from "vscode";
-import { LineParser } from "./lineParser";
+import { ExtensionContext, StatusBarItem, window, StatusBarAlignment, workspace, commands, TextEditor, Position, Selection, Range, TextLine, TextEditorEdit, TextDocument } from "vscode";
+import { LanguageParser } from "./languageParser";
 
 export function activate(context: ExtensionContext) {
     statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right);
-    statusBarItem.command = 'smartsemicolon.toggleAutoLineChange';
+    context.subscriptions.push(statusBarItem);
 
     updateConfiguration();
-
-    context.subscriptions.push(statusBarItem);
     context.subscriptions.push(workspace.onDidChangeConfiguration(updateConfiguration));
 
     context.subscriptions.push(commands.registerCommand('smartsemicolon.insert', insert));
@@ -24,135 +22,121 @@ function insert() {
     }
 
     const languageId = editor.document.languageId;
-    if (languageId == 'plaintext') {
-        editor.edit((editBuilder) => {
-            for (let i = 0; i < editor.selections.length; i++) {
-                editBuilder.insert(editor.selections[i].active, ';');
-            }
-        });
-        return;
-    }
+    const parser = parsers.get(editor.document.languageId);
 
     commands.executeCommand('leaveSnippet').then(() => {
         if (acceptSuggestions) {
             commands.executeCommand('acceptSelectedSuggestion').then(() => {
-                doInsert(editor);
+                doInsert(editor, parser);
             });
         } else {
-            doInsert(editor);
+            doInsert(editor, parser);
         }
     });
 }
 
-function doInsert(editor: TextEditor) {
-    const parser = lineParsers.get(editor.document.languageId);
-    if (!parser) {
-        insertAtTheEnd(editor);
-    } else {
-        const selections: Selection[] = [];
-        let isDelete = false;
+function doInsert(editor: TextEditor, parser: LanguageParser) {
+    const newSelections: Selection[] = [];
+    const selectionCount = editor.selections.length;
+    let isDelete = false;
 
-        editor.edit((editBuilder) => {
-            for (let i = 0; i < editor.selections.length; i++) {
-                const line = editor.document.lineAt(editor.selections[i].active);
-                if (line.isEmptyOrWhitespace) {
-                    isDelete = true;
-                    deleteLine(line, editor.document, editBuilder, selections, editor.selections[i]);
-                    continue;
-                }
+    editor.edit((editBuilder) => {
+        for (let i = 0; i < editor.selections.length; i++) {
+            const line = editor.document.lineAt(editor.selections[i].active.line);
+            if (line.isEmptyOrWhitespace) {
+                newSelections.push(deleteLine(editBuilder, editor, line, editor.selections[i]));
+                isDelete = true;
+                continue;
+            }
 
-                let position = parser.getSemicolonPosition(editor.document, editor.selections[i].active);
-                if (position.character == 0 || line.text.charAt(position.character - 1) != ';') {
-                    editBuilder.insert(position, ';');
-                }
+            let position = parser ? parser.getSemicolonPosition(line, editor.selections[i].active) :
+                new Position(line.lineNumber, line.text.length);
+
+            if (position.character == 0 || line.text.charAt(position.character - 1) != ';') {
+                editBuilder.insert(position, ';');
                 position = position.translate(0, 1);
-                selections.push(new Selection(position, position));
             }
-        }).then(() => {
-            editor.selections = selections;
-
-            if (autoLineChange && selections.length == 1 && !isDelete) {
-                editor.edit((editBuilder) => {
-                    const line = editor.document.lineAt(editor.selection.active);
-                    if (parser.canInsertLineBelow(editor.document, line)) {
-                        const indent = line.text.substring(0, line.firstNonWhitespaceCharacterIndex);
-                        editBuilder.insert(getLineEndPosition(line), '\n' + indent);
-                    }
-                });
-            }
-        });
-    }
-}
-
-function getLineEndPosition(line: TextLine): Position {
-    return new Position(line.lineNumber, line.text.length);
-}
-
-function deleteLine(line: TextLine, document: TextDocument, editBuilder: TextEditorEdit, selections: Selection[], selection: Selection) {
-    const range = getLineDeletionRange(document, line);
-    if (range) {
-        editBuilder.delete(range);
-        selections.push(new Selection(range.start, range.start));
-    } else {
-        selections.push(selection);
-    }
-}
-
-function insertAtTheEnd(editor: TextEditor) {
-    commands.executeCommand('cursorEnd').then(() => {
-        editor.edit((editBuilder) => {
-            for (let i = 0; i < editor.selections.length; i++) {
-                editBuilder.insert(editor.selections[i].active, ';');
-            }
-        }).then(() => {
-            if (autoLineChange) {
-                commands.executeCommand('editor.action.insertLineAfter');
-            }
-        });
+            newSelections.push(new Selection(position, position));
+        }
+    }).then(() => {
+        editor.selections = newSelections;
+        if (selectionCount == 1 && autoLineChange && !isDelete &&
+            canInsertLineAfter(editor.document, editor.selection, parser)) {
+            commands.executeCommand('editor.action.insertLineAfter');
+        }
     });
 }
 
-function getLineDeletionRange(document: TextDocument, line: TextLine): Range {
-    if (line.lineNumber == 0) {
-        return undefined;
+function canInsertLineAfter(document: TextDocument, selection: Selection, parser: LanguageParser): boolean {
+    if (selection.active.line == document.lineCount - 1) {
+        return true;
     }
-    return new Range(new Position(line.lineNumber - 1, document.lineAt(line.lineNumber - 1).text.length), new Position(line.lineNumber, line.text.length));
+
+    const nextLine = document.lineAt(selection.active.line + 1);
+    if (!parser) {
+        return nextLine.isEmptyOrWhitespace;
+    }
+    return parser.isEmptyLine(nextLine);
+}
+
+function deleteLine(editBuilder: TextEditorEdit, editor: TextEditor, line: TextLine, selection: Selection): Selection {
+    let newSelection: Selection = undefined;
+
+    if (deleteEmptyLine) {
+        let range: Range = undefined;
+        if (selection.active.line > 0) {
+            const prevLineEnd = new Position(line.lineNumber - 1, editor.document.lineAt(line.lineNumber - 1).text.length);
+            range = new Range(prevLineEnd, new Position(line.lineNumber, line.text.length));
+            newSelection = new Selection(prevLineEnd, prevLineEnd);
+        }
+        else if (editor.document.lineCount > 1) {
+            const zeroPosition = new Position(0, 0);
+            range = new Range(zeroPosition, new Position(1, 0));
+            newSelection = new Selection(zeroPosition, zeroPosition);
+        }
+        if (range) {
+            editBuilder.delete(range);
+        }
+    }
+
+    return newSelection;
 }
 
 function toggle() {
     enable = !enable;
     workspace.getConfiguration('smartsemicolon').update('enable', enable, true);
-    updateStatusBarItem();
+    updateConfiguration();
 }
 
 function toggleAutoLineChange() {
     autoLineChange = !autoLineChange;
     workspace.getConfiguration('smartsemicolon').update('autoLineChange', autoLineChange, true);
-    updateStatusBarItem();
+    updateConfiguration();
 }
 
 function updateConfiguration() {
     const config = workspace.getConfiguration('smartsemicolon');
+
     enable = config.get('enable');
     autoLineChange = config.get('autoLineChange');
     acceptSuggestions = config.get('acceptSuggestions');
     showInStatusBar = config.get('showInStatusBar');
+    deleteEmptyLine = config.get('deleteEmptyLine');
 
     updateStatusBarItem();
 }
 
 function updateStatusBarItem() {
     if (autoLineChange) {
-        statusBarItem.text = statusBarItemTitle + ' $(arrow-down)';
+        statusBarItem.text = statusBarItemTitle + " $(arrow-down)";
     } else {
         statusBarItem.text = statusBarItemTitle;
     }
 
-    if (!enable || !showInStatusBar) {
-        statusBarItem.hide();
-    }
-    else {
+    if (enable && showInStatusBar) {
         statusBarItem.show();
+    } else {
+        statusBarItem.hide();
     }
 }
 
@@ -160,10 +144,12 @@ let enable: boolean;
 let autoLineChange: boolean;
 let acceptSuggestions: boolean;
 let showInStatusBar: boolean;
+let deleteEmptyLine: boolean;
 
 let statusBarItem: StatusBarItem;
 
-let lineParsers = new Map<string, LineParser>();
-lineParsers.set('csharp', new LineParser('//', ['{', '}'], ['for'], ['return', 'break', 'throw']));
+let parsers = new Map<string, LanguageParser>();
+parsers.set('csharp', new LanguageParser('//', ['{', '}'], ['for'], ['throw', 'return', 'break']));
+parsers.set('typescript', new LanguageParser('//', ['{', '}'], ['for'], ['throw', 'return', 'break']));
 
-const statusBarItemTitle = 'SmartSemicolon';
+const statusBarItemTitle = 'Smart Semicolon';
