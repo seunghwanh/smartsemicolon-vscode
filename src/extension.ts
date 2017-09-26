@@ -1,6 +1,6 @@
 'use strict';
 
-import { ExtensionContext, StatusBarItem, window, StatusBarAlignment, workspace, commands, TextEditor, Position, Selection, Range, TextLine, TextEditorEdit, TextDocument } from "vscode";
+import { ExtensionContext, workspace, StatusBarItem, window, StatusBarAlignment, commands, TextEditor, TextDocument, Selection, TextLine, Position, Range, TextEditorEdit } from "vscode";
 import { LanguageParser } from "./languageParser";
 
 export function activate(context: ExtensionContext) {
@@ -23,105 +23,112 @@ function insert() {
     }
 
     if (!enable) {
-        editor.edit((editBuilder) => {
-            for (let i = 0; i < editor.selections.length; i++) {
-                editBuilder.insert(editor.selections[i].active, ';');
-            }
-        });
+        normalInsert(editor);
         return;
     }
 
-    const languageId = editor.document.languageId;
-    const parser = parsers.get(editor.document.languageId);
+    const document = editor.document;
+    const parser = languageParsers.get(document.languageId);
 
     commands.executeCommand('leaveSnippet').then(() => {
         if (acceptSuggestions) {
             commands.executeCommand('acceptSelectedSuggestion').then(() => {
-                doInsert(editor, parser);
+                doInsert(editor, document, parser);
             });
         } else {
-            doInsert(editor, parser);
+            doInsert(editor, document, parser);
         }
     });
 }
 
-function doInsert(editor: TextEditor, parser: LanguageParser) {
+function doInsert(editor: TextEditor, document: TextDocument, parser: LanguageParser) {
     const newSelections: Selection[] = [];
     const selectionCount = editor.selections.length;
-    let isDelete = false;
+    let wasDelete = false;
 
     editor.edit((editBuilder) => {
-        for (let i = 0; i < editor.selections.length; i++) {
-            const line = editor.document.lineAt(editor.selections[i].active.line);
-            if (line.isEmptyOrWhitespace) {
-                newSelections.push(deleteLine(editBuilder, editor, line, editor.selections[i]));
-                isDelete = true;
+        for (let selection of editor.selections) {
+            const line = document.lineAt(selection.active.line);
+            if (line.isEmptyOrWhitespace && deleteEmptyLine) {
+                newSelections.push(deleteLine(editBuilder, document, line, selection));
+                wasDelete = true;
                 continue;
             }
 
-            let position = parser ? parser.getSemicolonPosition(line, editor.selections[i].active) :
-                new Position(line.lineNumber, line.text.length);
-
+            let position = parser ? parser.getSemicolonPosition(line, selection.active) : getLineEndPosition(line);
             if (position.character == 0 || line.text.charAt(position.character - 1) != ';') {
                 editBuilder.insert(position, ';');
-                position = position.translate(0, 1);
             }
+            position = position.translate(0, 1);
             newSelections.push(new Selection(position, position));
         }
     }).then(() => {
         editor.selections = newSelections;
-        if (selectionCount == 1 && autoLineChange && !isDelete &&
-            canInsertLineAfter(editor.document, editor.selection, parser)) {
-            commands.executeCommand('editor.action.insertLineAfter');
+
+        if (selectionCount == 1 && autoLineChange && !wasDelete) {
+            const lineNumber = editor.selection.active.line;
+            let canInsert: boolean;
+            if (parser) {
+                canInsert = parser.canInsertLineAfter(document, lineNumber);
+            } else {
+                if (lineNumber == document.lineCount - 1) {
+                    canInsert = true;
+                } else {
+                    const nextLine = document.lineAt(lineNumber + 1);
+                    canInsert = nextLine.isEmptyOrWhitespace;
+                }
+            }
+
+            if (canInsert) {
+                commands.executeCommand('editor.action.insertLineAfter');
+            }
         }
     });
 }
 
-function canInsertLineAfter(document: TextDocument, selection: Selection, parser: LanguageParser): boolean {
-    if (parser) {
-        return parser.canInsertLineAfter(document, selection.active.line);
+function deleteLine(editBuilder: TextEditorEdit, document: TextDocument, line: TextLine, selection: Selection): Selection {
+    if (line.lineNumber == 0 && document.lineCount == 1) {
+        return new Selection(selection.active, selection.active);
     }
 
-    const lineNumber = selection.active.line;
-    if (lineNumber == document.lineCount - 1) {
-        return true;
+    let range: Range;
+    let newSelection: Selection;
+    if (line.lineNumber == 0) {
+        const zeroPosition = new Position(0, 0);
+        range = new Range(zeroPosition, zeroPosition.translate(1, 0));
+        newSelection = new Selection(zeroPosition, zeroPosition);
+    } else {
+        const previousLineEnd = getLineEndPosition(document.lineAt(line.lineNumber - 1));
+        range = new Range(previousLineEnd, getLineEndPosition(line));
+        newSelection = new Selection(previousLineEnd, previousLineEnd);
     }
-    return document.lineAt(lineNumber + 1).isEmptyOrWhitespace;
+
+    editBuilder.delete(range);
+    return newSelection;
 }
 
-function deleteLine(editBuilder: TextEditorEdit, editor: TextEditor, line: TextLine, selection: Selection): Selection {
-    let newSelection: Selection = undefined;
+function getLineEndPosition(line: TextLine): Position {
+    return new Position(line.lineNumber, line.text.length);
+}
 
-    if (deleteEmptyLine) {
-        let range: Range = undefined;
-        if (selection.active.line > 0) {
-            const prevLineEnd = new Position(line.lineNumber - 1, editor.document.lineAt(line.lineNumber - 1).text.length);
-            range = new Range(prevLineEnd, new Position(line.lineNumber, line.text.length));
-            newSelection = new Selection(prevLineEnd, prevLineEnd);
+function normalInsert(editor: TextEditor) {
+    editor.edit((editBuilder) => {
+        for (let selection of editor.selections) {
+            editBuilder.insert(selection.active, ';');
         }
-        else if (editor.document.lineCount > 1) {
-            const zeroPosition = new Position(0, 0);
-            range = new Range(zeroPosition, new Position(1, 0));
-            newSelection = new Selection(zeroPosition, zeroPosition);
-        }
-        if (range) {
-            editBuilder.delete(range);
-        }
-    }
-
-    return newSelection;
+    });
 }
 
 function toggle() {
     enable = !enable;
     workspace.getConfiguration('smartsemicolon').update('enable', enable, true);
-    updateConfiguration();
+    updateStatusBarItem();
 }
 
 function toggleAutoLineChange() {
     autoLineChange = !autoLineChange;
     workspace.getConfiguration('smartsemicolon').update('autoLineChange', autoLineChange, true);
-    updateConfiguration();
+    updateStatusBarItem();
 }
 
 function updateConfiguration() {
@@ -138,7 +145,7 @@ function updateConfiguration() {
 
 function updateStatusBarItem() {
     if (autoLineChange) {
-        statusBarItem.text = statusBarItemTitle + " $(arrow-down)";
+        statusBarItem.text = statusBarItemTitle + ' $(arrow-down)';
     } else {
         statusBarItem.text = statusBarItemTitle;
     }
@@ -158,16 +165,13 @@ let deleteEmptyLine: boolean;
 
 let statusBarItem: StatusBarItem;
 
-const cLangFamilyParser = new LanguageParser('//', ['{', '}'], ['for'], ['throw', 'return', 'break']);
-
-let parsers = new Map<string, LanguageParser>();
-parsers.set('c', cLangFamilyParser);
-parsers.set('cpp', cLangFamilyParser);
-parsers.set('csharp', cLangFamilyParser);
-parsers.set('java', cLangFamilyParser);
-parsers.set('typescript', cLangFamilyParser);
-parsers.set('javascript', cLangFamilyParser);
-parsers.set('go', cLangFamilyParser);
-parsers.set('shaderlab', cLangFamilyParser);
+const clangFamilyParser = new LanguageParser('//', ['{', '}'], ['for'], ['return', 'throw', 'continue', 'break']);
+const languageParsers = new Map<string, LanguageParser>();
+languageParsers.set('c', clangFamilyParser);
+languageParsers.set('cpp', clangFamilyParser);
+languageParsers.set('csharp', clangFamilyParser);
+languageParsers.set('java', clangFamilyParser);
+languageParsers.set('javascript', clangFamilyParser);
+languageParsers.set('typescript', clangFamilyParser);
 
 const statusBarItemTitle = 'Smart Semicolon';
